@@ -51,6 +51,7 @@ def validCheck(bo,num,pos):
     return True
 
 def solveSudoku(bo):
+    print(bo)
     find = findEmpty(bo)
     if not find:
         return True

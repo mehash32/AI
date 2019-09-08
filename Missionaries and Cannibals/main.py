@@ -1,101 +1,139 @@
-# initial
-im = 3
-ic = 3
-#final
-fm =0
-fc =0
-#side
-status = 0
-#boat current locatiion
-flag = 0
-#boat grouping
-select = 0
-print("  ", fc)
-def display(bpass1,bpass2):
-    global fm
-    global fc
-    print("\n\n\n")
-    for i in range(0,fm):
-        print(" M ")
-    for i in range (0,fc):
-        print(" C ")
-    if flag == 0:
-        print("    ~~~~~WATER~~~~~<B0(",bpass1,",", bpass2,")AT >   ")
-    else:
-        print("        <BO(",bpass1,",", bpass2,")AT ~~~~~WATER~~~~~  ")
-    for i in range (0,im):
-        print(" M ", end = '')
-    for i in range (0,ic):
-        print(" C ", end = '')
+class State():
+	def __init__(self, cannibalLeft, missionaryLeft, boat, cannibalRight, missionaryRight):
+		self.cannibalLeft = cannibalLeft
+		self.missionaryLeft = missionaryLeft
+		self.boat = boat
+		self.cannibalRight = cannibalRight
+		self.missionaryRight = missionaryRight
+		self.parent = None
 
-def win():
-    t = fc==3 and fm ==3
-    return t
+	def is_goal(self):
+		if self.cannibalLeft == 0 and self.missionaryLeft == 0:
+			return True
+		else:
+			return False
 
-def solution():
-    global  ic
-    global im
-    global fm
-    global fc
-    while win():
-        if flag==0:
-            if select ==1:
-                display('C',' ')
-                ic+=1
-                break
-            if select ==2:
-                display('C','M')
-                ic+=1
-                im+=1
-                break
-            if (im-2 >ic and fm+2 >=fc) or (im-2) ==0:
-                im = im -2
-                select =1
-                display('M',"M")
-                flag = 1
-            elif (ic-2<im and fm ==0 ) or (fc+2 <= fm or im == 0):
-                ic = ic -2
-                select =2
-                display('C','C')
-                flag = 1
-            elif (ic -1 <= im -1)and (fm+1 > fc+1):
-                ic = ic -1
-                im = im -1
-                select = 3
-                display('M','C')
-                flag = 1
-            else:
-                if select == 1:
-                    display('M','M')
-                    fm = fm+2
-                    break
-                if select ==2:
-                    display('C','C')
-                    fc = fc+2
-                    break
-                if select ==3:
-                    display('M','C')
-                    fc = fc=1
-                    fm = fm +1
-                    break
-                if win():
-                    if (fc > 1 and fm == 0 ) or im ==0:
-                        fc = fc-1
-                        select =1
-                        display('C',' ')
-                        flag =0
-                    elif ic+2 >im:
-                        fc = fc-1
-                        fm = fm-1
-                        select =2
-                        display('C','M')
-                        flag =0
+	def is_valid(self):
+		if self.missionaryLeft >= 0 and self.missionaryRight >= 0 \
+                   and self.cannibalLeft >= 0 and self.cannibalRight >= 0 \
+                   and (self.missionaryLeft == 0 or self.missionaryLeft >= self.cannibalLeft) \
+                   and (self.missionaryRight == 0 or self.missionaryRight >= self.cannibalRight):
+			return True
+		else:
+			return False
 
-print("MISSIONARIES AND CANNIBAL SOLUTION")
-display(' ', ' ')
-solution()
-display(' ',' ')
+	def __eq__(self, other):
+		return self.cannibalLeft == other.cannibalLeft and self.missionaryLeft == other.missionaryLeft \
+                   and self.boat == other.boat and self.cannibalRight == other.cannibalRight \
+                   and self.missionaryRight == other.missionaryRight
 
+	def __hash__(self):
+		return hash((self.cannibalLeft, self.missionaryLeft, self.boat, self.cannibalRight, self.missionaryRight))
 
+def successors(cur_state):
+	children = [];
+	if cur_state.boat == 'left':
+		new_state = State(cur_state.cannibalLeft, cur_state.missionaryLeft - 2, 'right',
+                                  cur_state.cannibalRight, cur_state.missionaryRight + 2)
+		## Two missionaries cross left to right.
+		if new_state.is_valid():
+			new_state.parent = cur_state
+			children.append(new_state)
+		new_state = State(cur_state.cannibalLeft - 2, cur_state.missionaryLeft, 'right',
+                                  cur_state.cannibalRight + 2, cur_state.missionaryRight)
+		## Two cannibals cross left to right.
+		if new_state.is_valid():
+			new_state.parent = cur_state
+			children.append(new_state)
+		new_state = State(cur_state.cannibalLeft - 1, cur_state.missionaryLeft - 1, 'right',
+                                  cur_state.cannibalRight + 1, cur_state.missionaryRight + 1)
+		## One missionary and one cannibal cross left to right.
+		if new_state.is_valid():
+			new_state.parent = cur_state
+			children.append(new_state)
+		new_state = State(cur_state.cannibalLeft, cur_state.missionaryLeft - 1, 'right',
+                                  cur_state.cannibalRight, cur_state.missionaryRight + 1)
+		## One missionary crosses left to right.
+		if new_state.is_valid():
+			new_state.parent = cur_state
+			children.append(new_state)
+		new_state = State(cur_state.cannibalLeft - 1, cur_state.missionaryLeft, 'right',
+                                  cur_state.cannibalRight + 1, cur_state.missionaryRight)
+		## One cannibal crosses left to right.
+		if new_state.is_valid():
+			new_state.parent = cur_state
+			children.append(new_state)
+	else:
+		new_state = State(cur_state.cannibalLeft, cur_state.missionaryLeft + 2, 'left',
+                                  cur_state.cannibalRight, cur_state.missionaryRight - 2)
+		## Two missionaries cross right to left.
+		if new_state.is_valid():
+			new_state.parent = cur_state
+			children.append(new_state)
+		new_state = State(cur_state.cannibalLeft + 2, cur_state.missionaryLeft, 'left',
+                                  cur_state.cannibalRight - 2, cur_state.missionaryRight)
+		## Two cannibals cross right to left.
+		if new_state.is_valid():
+			new_state.parent = cur_state
+			children.append(new_state)
+		new_state = State(cur_state.cannibalLeft + 1, cur_state.missionaryLeft + 1, 'left',
+                                  cur_state.cannibalRight - 1, cur_state.missionaryRight - 1)
+		## One missionary and one cannibal cross right to left.
+		if new_state.is_valid():
+			new_state.parent = cur_state
+			children.append(new_state)
+		new_state = State(cur_state.cannibalLeft, cur_state.missionaryLeft + 1, 'left',
+                                  cur_state.cannibalRight, cur_state.missionaryRight - 1)
+		## One missionary crosses right to left.
+		if new_state.is_valid():
+			new_state.parent = cur_state
+			children.append(new_state)
+		new_state = State(cur_state.cannibalLeft + 1, cur_state.missionaryLeft, 'left',
+                                  cur_state.cannibalRight - 1, cur_state.missionaryRight)
+		## One cannibal crosses right to left.
+		if new_state.is_valid():
+			new_state.parent = cur_state
+			children.append(new_state)
+	return children
 
+def breadth_first_search():
+	initial_state = State(3,3,'left',0,0)
+	if initial_state.is_goal():
+		return initial_state
+	frontier = list()
+	explored = set()
+	frontier.append(initial_state)
+	while frontier:
+		state = frontier.pop(0)
+		if state.is_goal():
+			return state
+		explored.add(state)
+		children = successors(state)
+		for child in children:
+			if (child not in explored) or (child not in frontier):
+				frontier.append(child)
+	return None
 
+def print_solution(solution):
+		path = []
+		path.append(solution)
+		parent = solution.parent
+		while parent:
+			path.append(parent)
+			parent = parent.parent
+
+		for t in range(len(path)):
+			state = path[len(path) - t - 1]
+			print ("(C" + str(state.cannibalLeft) + ", M" + str(state.missionaryLeft) \
+                              + "," + state.boat + ", C" + str(state.cannibalRight) + ", M" + \
+                              str(state.missionaryRight) + ")")
+
+def main():
+	solution = breadth_first_search()
+	print ("Missionaries and Cannibals solution:")
+	print ("(cannibalLeft,missionaryLeft,boat,cannibalRight,missionaryRight)")
+	print_solution(solution)
+
+# if called from the command line, call main()
+if __name__ == "__main__":
+	main()
